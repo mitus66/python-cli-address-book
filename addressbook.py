@@ -3,6 +3,17 @@ from datetime import datetime, timedelta
 import re
 import pickle
 
+def save_data(book, filename="addressbook.pkl"):
+    with open(filename, "wb") as f:
+        pickle.dump(book, f)
+
+def load_data(filename="addressbook.pkl"):
+    try:
+        with open(filename, "rb") as f:
+            return pickle.load(f)
+    except FileNotFoundError:
+        return AddressBook()
+
 class Field:
     def __init__(self, value):
         self._value = value
@@ -97,10 +108,6 @@ class Record:
         return f"Contact name: {self.name.value}, phones: {phones_str}{birthday_str}"
 
 class AddressBook(UserDict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.filename = "addressbook.pkl"  # Ім'я файлу для збереження
-
     def add_record(self, record):
         self.data[record.name.value] = record
 
@@ -132,27 +139,6 @@ class AddressBook(UserDict):
                         greeting_date += timedelta(days=days_to_add)
                     upcoming_birthdays.append({"name": name, "birthday": greeting_date.strftime("%Y.%m.%d")})
         return upcoming_birthdays
-
-    def save(self):
-        """Зберігає адресну книгу у файл."""
-        try:
-            with open(self.filename, "wb") as f:
-                pickle.dump(self, f)
-        except Exception as e:
-            print(f"Error saving address book: {e}")
-
-    @classmethod
-    def load(cls):
-        """Завантажує адресну книгу з файлу."""
-        try:
-            with open(cls.filename, "rb") as f:
-                return pickle.load(f)
-        except FileNotFoundError:
-            print("No existing address book found, creating a new one.")
-            return cls()  # Повернення екземпляру класу AddressBook
-        except Exception as e:
-            print(f"Error loading address book: {e}")
-            return cls()
 
     def __str__(self):
         return "\n".join(str(record) for record in self.data.values())
@@ -256,48 +242,45 @@ def birthdays(args, book: AddressBook):
         return "No upcoming birthdays in the next 7 days."
 
 def main():
-    book = AddressBook.load()  # Завантаження адресної книги при запуску
+    book = load_data()
     print("Welcome to the assistant bot!")
-    try:
-        while True:
-            user_input = input("Enter a command: ")
-            command, *args = parse_input(user_input)
 
-            if command in ["close", "exit"]:
-                print("Good bye!")
-                book.save()  # Збереження адресної книги перед виходом
-                break
+    while True:
+        user_input = input("Enter a command: ")
+        command, *args = parse_input(user_input)
 
-            elif command == "hello":
-                print("How can I help you?")
+        if command in ["close", "exit"]:
+            save_data(book)
+            print("Good bye!")
+            break
 
-            elif command == "add":
-                print(add_contact(args, book))
+        elif command == "hello":
+            print("How can I help you?")
 
-            elif command == "change":
-                print(change_contact(args, book))
+        elif command == "add":
+            print(add_contact(args, book))
 
-            elif command == "phone":
-                print(show_phone(args, book))
+        elif command == "change":
+            print(change_contact(args, book))
 
-            elif command == "all":
-                print(show_all(book))
+        elif command == "phone":
+            print(show_phone(args, book))
 
-            elif command == "add-birthday":
-                print(add_birthday(args, book))
+        elif command == "all":
+            print(show_all(book))
 
-            elif command == "show-birthday":
-                print(show_birthday(args, book))
+        elif command == "add-birthday":
+            print(add_birthday(args, book))
 
-            elif command == "birthdays":
-                print(birthdays(args, book))
+        elif command == "show-birthday":
+            print(show_birthday(args, book))
 
-            else:
-                print("Invalid command.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        book.save()
+        elif command == "birthdays":
+            print(birthdays(args, book))
+
+        else:
+            print("Invalid command.")
+
 
 if __name__ == "__main__":
     main()
