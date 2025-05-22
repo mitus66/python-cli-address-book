@@ -1,6 +1,5 @@
 from collections import UserDict
 from datetime import datetime, timedelta
-import re
 import pickle
 
 def save_data(book, filename="addressbook.pkl"):
